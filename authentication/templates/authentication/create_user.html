@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block body %}
+
+{% if messages %}
+<div class="alert alert-success m-3" role="alert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center"><i class="fa-regular fa-address-card"></i> Neuen Benutzer Registrieren</h3>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'create_user' %}" method="POST">
+                        {% csrf_token %}    
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Benutzername</label>
+                            <input type="text" id="username" name="username" class="form-control" placeholder="Benutzername eingeben" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fname" class="form-label">Vorname</label>
+                            <input type="text" id="fname" name="fname" class="form-control" placeholder="Max" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="lname" class="form-label">Nachname</label>
+                            <input type="text" id="lname" name="lname" class="form-control" placeholder="Mustermann" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="Email Addresse" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Passwort</label>
+                            <input type="password" id="pass1" name="password" class="form-control" placeholder="Passwort eingeben" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Passwort bestätigen</label>
+                            <input type="password" id="pass2" name="confirm_password" class="form-control" placeholder="Passwort bestätigen" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" id="is_superuser" name="is_superuser" class="form-check-input" value="True">
+                            <label for="is_superuser" class="form-check-label">Adminrechte</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Registrieren</button>
+                        <a href="{% url 'home' %}" class="btn btn-secondary">Abbrechen</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

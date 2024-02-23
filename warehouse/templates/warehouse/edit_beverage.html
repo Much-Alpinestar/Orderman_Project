@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <h3 class="text-center m-4">Getränk bearbeiten</h3>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-light mb-3">
+                <div class="card-header">
+                    <i class="fa-solid fa-wine-bottle fa-lg"></i> Getränk bearbeiten
+                </div>
+                <div class="card-body">
+                    <form action="" method="POST">
+                        <div class="mb-3">
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Getränk aktualisieren</button>
+                        <a href="{% url 'index' %}" class="btn btn-secondary">Abbrechen</a>
+                      </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

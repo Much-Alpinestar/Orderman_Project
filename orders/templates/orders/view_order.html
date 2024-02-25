@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <h3 class="text-center m-4">Bestellung für {{ order.table }}</h3>
+  
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-light mb-3">
+                <div class="card-header">
+                    <i class="fa-solid fa-utensils"></i> Bestellung
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'complete_order' order.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <h3 class="mb-3">Alle</h3>
+                            {% if order_items %}
+                                <ul class="list-group">
+                                    {% for item in order_items %}
+                                    <li class="list-group-item">
+                                        {% if item.food %}
+                                            {{ item.food.name }}
+                                        {% elif item.beverage %}
+                                            {{ item.beverage.name }}
+                                        {% endif %}
+                                        - {{ item.price }} - Menge: {{ item.quantity }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div class="alert alert-primary">Keine Speisen oder Getränke hinzugefügt</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <p>Gesamtsumme: {{ order.total_price }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-success me-1 mb-1" data-bs-toggle="modal" data-bs-target="#addFoodModal">Speise hinzufügen</button>
+                            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addBeverageModal">Getränk hinzufügen</button>
+                        </div>
+                        <button type="submit" name="complete_order" class="btn btn-primary">Bestellung abschließen</button>
+                        <a href="{% url 'order_index' %}" class="btn btn-danger">Abbrechen</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Speisen -->
+    <div class="modal fade" id="addFoodModal" tabindex="-1" aria-labelledby="addFoodModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addFoodModalLabel">Speise hinzufügen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addFoodForm" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="food_select" class="form-label">Speise auswählen:</label>
+                            <select id="food_select" name="food" class="form-select">
+                                {% for food in foods %}
+                                    <option value="{{ food.id }}">{{ food.name }} - {{ food.price }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity_input" class="form-label">Menge:</label>
+                            <input type="number" id="quantity_input" name="quantity" class="form-control" min="1" value="1">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Speise hinzufügen</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal für Getränke -->
+    <div class="modal fade" id="addBeverageModal" tabindex="-1" aria-labelledby="addBeverageModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addBeverageModalLabel">Getränk hinzufügen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addBeverageForm" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="beverage_select" class="form-label">Getränk auswählen:</label>
+                            <select id="beverage_select" name="beverage" class="form-select">
+                                {% for beverage in beverages %}
+                                    <option value="{{ beverage.id }}">{{ beverage.name }} - {{ beverage.price }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity_input_beverage" class="form-label">Menge:</label>
+                            <input type="number" id="quantity_input_beverage" name="quantity" class="form-control" min="1" value="1">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Getränk hinzufügen</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript-Bibliothek einbinden -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Bootstrap JS einbinden -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Eigener JavaScript-Code -->
+    <script>
+        // JavaScript-Code, um die Auswahl des Benutzers im Modal zu erfassen und eine AJAX-Anfrage zu senden
+$(document).ready(function(){
+    // AJAX-Anfrage zum Hinzufügen von Speisen
+    $('#addFoodForm').submit(function(e){
+        e.preventDefault(); // Verhindern des Standardformularverhaltens
+        var foodId = $('#food_select').val();
+        var quantity = $('#quantity_input').val();
+        $.ajax({
+            type: 'POST',
+            url: '{% url "add_food_to_order" %}',
+            data: {
+                'food_id': foodId,
+                'quantity': quantity,
+                'order_id': '{{ order.id }}',
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(){
+                // Aktualisieren Sie die Seite oder eine bestimmte Teilseite nach Bedarf
+                location.reload();
+            }
+        });
+    });
+
+    // AJAX-Anfrage zum Hinzufügen von Getränken
+    $('#addBeverageForm').submit(function(e){
+        e.preventDefault(); // Verhindern des Standardformularverhaltens
+        var beverageId = $('#beverage_select').val();
+        var quantity = $('#quantity_input_beverage').val(); // Achten Sie darauf, dass Sie das richtige Feld verwenden
+        $.ajax({
+            type: 'POST',
+            url: '{% url "add_beverage_to_order" %}',
+            data: {
+                'beverage_id': beverageId,
+                'quantity': quantity,
+                'order_id': '{{ order.id }}',
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(){
+                // Aktualisieren Sie die Seite oder eine bestimmte Teilseite nach Bedarf
+                location.reload();
+            }
+        });
+    });
+});
+    </script>
+{% endblock %}

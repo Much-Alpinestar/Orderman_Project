@@ -7,7 +7,7 @@ from .forms import UserForm
 
 
 def home(request):
-    return render(request, 'authentication/index.html')
+    return render(request, 'authentication/index.html',{'users':User.objects.all()})
 
 def is_admin(user):
     return user.is_authenticated and user.is_superuser
@@ -68,10 +68,10 @@ def user_login(request):
 
         if user is not None:
             login(request, user)
-            return redirect('home')
+            return redirect('order_index')
         else:
             messages.error(request, 'Benutzername oder Passwort sind falsch.')
-            #return redirect('login')
+            return redirect('login')
 
     return render(request, 'authentication/login.html')
 
@@ -80,8 +80,3 @@ def user_logout(request):
     logout(request)
     messages.success(request, 'Sie wurden erfolgreich abgemeldet.')
     return redirect('login')
-
-
-def user_list(request):
-    return render(request, 'authentication/index.html', {'users':User.objects.all()})
-

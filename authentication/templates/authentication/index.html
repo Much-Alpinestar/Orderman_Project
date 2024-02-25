@@ -13,8 +13,8 @@
     <h1>Benutzerverwaltung</h1>
     {% if user.is_authenticated %}
         {% if user.is_superuser %}
+            <a href="{% url 'create_user' %}" class="btn btn-outline-primary mt-3 me-3 mb-3">Neuen Benutzer anlegen</a>
             <h3 class="mb-4">Benutzerliste</h3>
-            <a href="{% url 'create_user' %}" class="btn btn-outline-primary mb-3">Neuen Benutzer anlegen</a>
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead>

@@ -35,8 +35,8 @@
                             <p>Gesamtsumme: {{ order.total_price }}</p>
                         </div>
                         <div class="mb-3">
-                            <button type="button" class="btn btn-success me-1 mb-1" data-bs-toggle="modal" data-bs-target="#addFoodModal">Speise hinzufügen</button>
-                            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addBeverageModal">Getränk hinzufügen</button>
+                            <button type="button" class="btn btn-outline-success me-1 mb-1" data-bs-toggle="modal" data-bs-target="#addFoodModal">Speise hinzufügen</button>
+                            <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#addBeverageModal">Getränk hinzufügen</button>
                         </div>
                         <button type="submit" name="complete_order" class="btn btn-primary">Bestellung abschließen</button>
                         <a href="{% url 'order_index' %}" class="btn btn-danger">Abbrechen</a>

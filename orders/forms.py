@@ -6,6 +6,8 @@ class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = ['table']
+        labels = {'table':'Tisch'}
+        
         widgets = {
             'table': forms.Select(attrs={'class': 'form-control'}),
         }

@@ -5,7 +5,12 @@ class FoodForm(forms.ModelForm):
     class Meta:
         model = Food
         fields = ['name', 'price', 'quantity', 'category']
-
+        labels = {
+            'price':'Preis',
+            'quantity':'Menge',
+            'category':'Kategorie',    
+        }
+        
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -22,7 +27,11 @@ class BeverageForm(forms.ModelForm):
     class Meta:
         model = Beverage
         fields = ['name', 'price', 'quantity']
-
+        labels = {
+            'name':'Name',
+            'price':'Preis',
+            'quantity':'Menge',
+        }
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control'}),

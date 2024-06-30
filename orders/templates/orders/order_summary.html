@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% load custom_tags %}
+
+{% block body %}
+    <h3 class="text-center m-4">Bestellung für {{ order.table }}</h3>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-light mb-3">
+                <div class="card-header">
+                    <i class="fa-solid fa-utensils"></i> Bestellung
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-3">{{ order.table }}</h3>
+                    {% if unpaid_items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Artikel</th>
+                                        <th scope="col">Preis</th>
+                                        <th scope="col">Bestellt</th>
+                                        <th scope="col">Bezahlt</th>
+                                        <th scope="col">Gesamt</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in unpaid_items %}
+                                        {% if item.quantity|subtract:item.paid_quantity > 0 %}
+                                            <tr>
+                                                <td>
+                                                    {% if item.food %}
+                                                        {{ item.food.name }}
+                                                    {% elif item.beverage %}
+                                                        {{ item.beverage.name }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>€ {{ item.price }}</td>
+                                                <td>{{ item.quantity }}</td>
+                                                <td>{{ item.paid_quantity }}</td>
+                                                <td>€ {{ item.price|multiply:item.quantity|floatformat:2 }}</td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-primary">Keine Speisen oder Getränke offen.</div>
+                    {% endif %}
+                    <p><strong>Gesamtsumme: € {{ order.total_price }}</strong></p>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#paymentChoiceModal">
+                        <i class="fa-solid fa-money-bill-wave fa-lg"></i> Bezahlen
+                    </button>
+                    <a href="{% url 'order_index' %}" class="btn btn-danger">Abbrechen</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auswahlmodal -->
+    <div class="modal fade" id="paymentChoiceModal" tabindex="-1" aria-labelledby="paymentChoiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentChoiceModalLabel">Bezahlung</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body d-flex justify-content-between">
+                    <button type="button" class="btn btn-success mb-3 flex-grow-1 me-2" data-bs-toggle="modal" data-bs-target="#splitPaymentModal" data-bs-dismiss="modal">Rechnung splitten</button>
+                    <button type="button" class="btn btn-primary mb-3 flex-grow-1 ms-2" data-bs-toggle="modal" data-bs-target="#totalPaymentModal" data-bs-dismiss="modal">Gesamtrechnung bezahlen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Split-Zahlung -->
+    <div class="modal fade" id="splitPaymentModal" tabindex="-1" aria-labelledby="splitPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="splitPaymentModalLabel">Rechnung splitten</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h5>{{ order.table }}</h5>
+                    <h5>Unbezahlte Posten auswählen</h5>
+                    <form id="splitForm" method="POST" onsubmit="event.preventDefault(); markItemsAsPaid();">
+                        {% csrf_token %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Auswahl</th>
+                                        <th>Artikel</th>
+                                        <th>Preis</th>
+                                        <th>Offen</th>
+                                        <th>Bezahlen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in unpaid_items %}
+                                        {% if item.quantity|subtract:item.paid_quantity > 0 %}
+                                            <tr>
+                                                <td>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="item_ids" value="{{ item.id }}" onchange="calculateSplit()">
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if item.food %}
+                                                        {{ item.food.name }}
+                                                    {% elif item.beverage %}
+                                                        {{ item.beverage.name }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>€ {{ item.price }}</td>
+                                                <td>{{ item.quantity|subtract:item.paid_quantity }}</td>
+                                                <td><input class="form-control form-control-sm" type="number" name="quantities" data-item-id="{{ item.id }}" value="1" min="1" max="{{ item.quantity|subtract:item.paid_quantity }}" onchange="calculateSplit()"></td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <p id="split_total"><strong>Zwischensumme: 0 €</strong></p>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <button id="markSelectedPaidButton" type="submit" class="btn btn-primary">Ausgewählte als bezahlt markieren</button>
+                                <button id="markOrderPaidButton" type="button" class="btn btn-success ms-2" style="display: none;" onclick="markOrderAsPaidIfAllItemsPaid()">Bestellung als bezahlt markieren</button>
+                            </div>
+                            <a id="backButton" href="{% url 'order_index' %}" class="btn btn-danger">Zurück</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Gesamtrechnung -->
+    <div class="modal fade" id="totalPaymentModal" tabindex="-1" aria-labelledby="totalPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="totalPaymentModalLabel">Gesamtrechnung bezahlen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Gesamtsumme: € {{ order.total_price }}</p>
+                    <button type="button" class="btn btn-primary" onclick="payTotalConfirmed()">Bezahlen</button>
+                    <a href="{% url 'order_index' %}" class="btn btn-secondary">Zurück</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Eigener JavaScript-Code -->
+    <script>
+        function showSplitPayment() {
+            $('#paymentChoiceModal').modal('hide');
+            $('#splitPaymentModal').modal('show');
+        }
+
+        function payTotal() {
+            $('#paymentChoiceModal').modal('hide');
+            $('#totalPaymentModal').modal('show');
+        }
+
+        function calculateSplit() {
+            const selectedItems = Array.from(document.querySelectorAll('input[name="item_ids"]:checked')).map(checkbox => checkbox.value);
+            const quantities = selectedItems.map(itemId => {
+                const quantityInput = document.querySelector(`input[name="quantities"][data-item-id="${itemId}"]`);
+                return quantityInput ? quantityInput.value : 0;
+            });
+
+            fetch("{% url 'calculate_split' order.id %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'item_ids': JSON.stringify(selectedItems),
+                    'quantities': JSON.stringify(quantities)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('split_total').innerText = `Zwischensumme: ${data.split_total} €`;
+                    updateButtonVisibility();
+                } else {
+                    console.error('Error:', data.error);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function markItemsAsPaid() {
+            const selectedItems = Array.from(document.querySelectorAll('input[name="item_ids"]:checked')).map(checkbox => checkbox.value);
+            const quantities = selectedItems.map(itemId => {
+                const quantityInput = document.querySelector(`input[name="quantities"][data-item-id="${itemId}"]`);
+                return quantityInput ? quantityInput.value : 0;
+            });
+        
+            fetch("{% url 'mark_items_as_paid' order.id %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'item_ids': JSON.stringify(selectedItems),
+                    'quantities': JSON.stringify(quantities)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Modal-Inhalt neu laden
+                    //$('#splitPaymentModal').modal('hide');
+                    //location.reload();
+                    // Modal-Inhalt neu laden und offen lassen
+                    updateUnpaidItems();
+                    updateButtonVisibility();
+                } else {
+                    console.error('Error:', data.error);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function markOrderAsPaidIfAllItemsPaid() {
+            fetch("{% url 'mark_order_as_paid' order.id %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Erfolgreiche Bezahlung, leiten Sie zur gewünschten Seite weiter oder laden Sie die aktuelle Seite neu
+                    window.location.href = "{% url 'order_index' %}";
+                } else {
+                    console.error('Error:', data.error);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function payTotalConfirmed() {
+            fetch("{% url 'mark_order_as_paid' order.id %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: new URLSearchParams({
+                    'force': 'true'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Erfolgreiche Bezahlung, leiten Sie zur gewünschten Seite weiter oder laden Sie die aktuelle Seite neu
+                    window.location.href = "{% url 'order_index' %}";
+                } else {
+                    console.error('Error:', data.error);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function updateButtonVisibility() {
+            fetch("{% url 'check_all_items_paid' order.id %}", {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.all_items_paid) {
+                    document.getElementById('markSelectedPaidButton').style.display = 'none';
+                    document.getElementById('markOrderPaidButton').style.display = 'block';
+                    document.getElementById('backButton').style.display = 'none';
+                } else {
+                    document.getElementById('markSelectedPaidButton').style.display = 'block';
+                    document.getElementById('markOrderPaidButton').style.display = 'none';
+                    document.getElementById('backButton').style.display = 'block';
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function updateUnpaidItems() {
+            fetch("{% url 'order_summary' order.id %}")
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const unpaidItemsTable = doc.querySelector('#splitForm tbody').innerHTML;
+                document.querySelector('#splitForm tbody').innerHTML = unpaidItemsTable;
+                document.querySelector('#split_total').innerText = 'Zwischensumme: 0 €';
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        $(document).ready(function(){
+            // Initiale Sichtbarkeitsprüfung
+            updateButtonVisibility();
+
+            // Sicherstellen, dass die Funktion updateButtonVisibility() nach dem Neuladen der Seite aufgerufen wird
+            $(window).on('load', function() {
+                updateButtonVisibility();
+            });
+
+            // AJAX-Anfrage zum Hinzufügen von Speisen
+            $('#addFoodForm').submit(function(e){
+                e.preventDefault(); // Verhindern des Standardformularverhaltens
+                var foodId = $('#food_select').val();
+                var quantity = $('#quantity_input').val();
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url "add_food_to_order" %}',
+                    data: {
+                        'food_id': foodId,
+                        'quantity': quantity,
+                        'order_id': '{{ order.id }}',
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(){
+                        // Aktualisieren Sie die Seite oder eine bestimmte Teilseite nach Bedarf
+                        location.reload();
+                    }
+                });
+            });
+
+            // AJAX-Anfrage zum Hinzufügen von Getränken
+            $('#addBeverageForm').submit(function(e){
+                e.preventDefault(); // Verhindern des Standardformularverhaltens
+                var beverageId = $('#beverage_select').val();
+                var quantity = $('#quantity_input_beverage').val(); // Achten Sie darauf, dass Sie das richtige Feld verwenden
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url "add_beverage_to_order" %}',
+                    data: {
+                        'beverage_id': beverageId,
+                        'quantity': quantity,
+                        'order_id': '{{ order.id }}',
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(){
+                        // Aktualisieren Sie die Seite oder eine bestimmte Teilseite nach Bedarf
+                        location.reload();
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock body %}

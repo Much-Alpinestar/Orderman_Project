@@ -2,7 +2,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from orders.models import Order
 from datetime import date, timedelta
-
+from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
@@ -44,14 +44,15 @@ def generate_pdf(response, orders, report_title):
     elements.append(Spacer(1, 12))
 
     # Datum
-    elements.append(Paragraph(f"Datum: {date.today().strftime('%d.%m.%Y')}", styles['Normal']))
+    elements.append(Paragraph(f"Datum: {timezone.localtime(timezone.now()).strftime('%d.%m.%Y')}", styles['Normal']))
     elements.append(Spacer(1, 12))
 
     # Tabelle der Bestellungen
-    data = [['Bestellnr.', 'Tisch', 'Artikel', 'Menge', 'Preis (€)', 'Erstellt am', 'Preis ohne MwSt', 'Preis mit MwSt']]
+    data = [['Bestellnr.', 'Tisch/Kunde', 'Artikel', 'Menge', 'Preis (€)', 'Erstellt am', 'Preis ohne MwSt', 'Preis mit MwSt']]
     for order in orders:
         total_price = Decimal('0.00')
-        data.append([order.id, f'Tisch {order.table.number_of_table}', '', '', '', order.created_at.strftime('%d.%m.%Y %H:%M'), '', ''])
+        table_or_customer = f'Tisch {order.table.number_of_table}' if order.table else f'Kunde {order.customer.name}'
+        data.append([order.id, table_or_customer, '', '', '', timezone.localtime(order.created_at).strftime('%d.%m.%Y %H:%M'), '', ''])
         for item in order.items.all():
             item_total_price = item.quantity * item.price
             total_price += item_total_price

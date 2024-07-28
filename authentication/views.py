@@ -1,23 +1,29 @@
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-
 from .forms import UserForm
 
 
+def is_superuser(user):
+    return user.is_authenticated and user.is_superuser
+
+def is_staff(user):
+    return user.is_authenticated and user.is_staff
+
+@login_required
 def home(request):
     return render(request, 'authentication/index.html',{'users':User.objects.all()})
 
-def is_admin(user):
-    return user.is_authenticated and user.is_superuser
-
+@login_required
+@user_passes_test(is_superuser)
 def create_user(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
             # Debugging-Ausgabe für Formulardaten
-            print("Formulardaten:", form.cleaned_data)
+            #print("Formulardaten:", form.cleaned_data)
 
             username = form.cleaned_data['username']
             fname = form.cleaned_data['fname']
@@ -57,7 +63,6 @@ def create_user(request):
         form = UserForm()
     return render(request, 'authentication/create_user.html', {'form': form})
 
-
 def user_login(request):
 
     if request.method == 'POST':
@@ -75,7 +80,7 @@ def user_login(request):
 
     return render(request, 'authentication/login.html')
 
-
+@login_required
 def user_logout(request):
     logout(request)
     messages.success(request, 'Sie wurden erfolgreich abgemeldet.')

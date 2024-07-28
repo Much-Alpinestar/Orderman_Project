@@ -1,18 +1,31 @@
 {% extends "base.html" %}
 {% load custom_tags %}
 {% block body %}
-<h3 class="text-center m-4">Bestellung für {{ order.table }}</h3>
+<h3 class="text-center m-4">
+    Bestellung für 
+    {% if order.table %}
+        {{ order.table }}
+    {% elif order.customer %}
+        {{ order.customer.name }}
+    {% endif %}
+</h3>
 
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10 col-sm-12">
             <div class="card bg-light mb-3">
                 <div class="card-header">
-                    <i class="fa-solid fa-utensils"></i> Bestellung
+                    <i class="fa-solid fa-utensils"></i><strong> Bestellung</strong>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <h3 class="mb-3">{{ order.table }}</h3>
+                        <h3 class="mb-3">
+                            {% if order.table %}
+                                {{ order.table }}
+                            {% elif order.customer %}
+                                {{ order.customer.name }}
+                            {% endif %}
+                        </h3>
                         {% if order_items %}
                         <div class="table-responsive">
                             <table class="table table-hover">
@@ -38,7 +51,7 @@
                                         <td>€ {{ item.price }}</td>
                                         <td>{{ item.quantity }}</td>
                                         <td>{{ item.paid_quantity }}</td>
-                                        <td>€ {{ item.price|multiply:item.quantity|floatformat:2 }}</td>
+                                        <td>€ {{ item.total_price|floatformat:2 }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -49,7 +62,7 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <p>Gesamtsumme: € {{ order.total_price }}</p>
+                        <p><strong>Gesamtsumme: € {{ order.total_price }}</strong></p>
                     </div>
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'order_index' %}" class="btn btn-primary">Zurück</a>

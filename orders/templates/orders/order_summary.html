@@ -2,16 +2,29 @@
 {% load custom_tags %}
 
 {% block body %}
-    <h3 class="text-center m-4">Bestellung für {{ order.table }}</h3>
+    <h3 class="text-center m-4">
+        Bestellung für 
+        {% if order.table %}
+            {{ order.table }}
+        {% elif order.customer %}
+            {{ order.customer.name }}
+        {% endif %}
+    </h3>
 
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card bg-light mb-3">
                 <div class="card-header">
-                    <i class="fa-solid fa-utensils"></i> Bestellung
+                    <i class="fa-solid fa-utensils"></i><strong> Bestellung</strong>
                 </div>
                 <div class="card-body">
-                    <h3 class="mb-3">{{ order.table }}</h3>
+                    <h3 class="mb-3">
+                        {% if order.table %}
+                            {{ order.table }}
+                        {% elif order.customer %}
+                            {{ order.customer.name }}
+                        {% endif %}
+                    </h3>
                     {% if unpaid_items %}
                         <div class="table-responsive">
                             <table class="table table-hover">
@@ -26,7 +39,7 @@
                                 </thead>
                                 <tbody>
                                     {% for item in unpaid_items %}
-                                        {% if item.quantity|subtract:item.paid_quantity > 0 %}
+                                        {% if item.remaining_quantity > 0 %}
                                             <tr>
                                                 <td>
                                                     {% if item.food %}
@@ -38,7 +51,7 @@
                                                 <td>€ {{ item.price }}</td>
                                                 <td>{{ item.quantity }}</td>
                                                 <td>{{ item.paid_quantity }}</td>
-                                                <td>€ {{ item.price|multiply:item.quantity|floatformat:2 }}</td>
+                                                <td>€ {{ item.total_price|floatformat:2 }}</td>
                                             </tr>
                                         {% endif %}
                                     {% endfor %}
@@ -49,7 +62,7 @@
                         <div class="alert alert-primary">Keine Speisen oder Getränke offen.</div>
                     {% endif %}
                     <p><strong>Gesamtsumme: € {{ order.total_price }}</strong></p>
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#paymentChoiceModal">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentChoiceModal">
                         <i class="fa-solid fa-money-bill-wave fa-lg"></i> Bezahlen
                     </button>
                     <a href="{% url 'order_index' %}" class="btn btn-danger">Abbrechen</a>
@@ -83,7 +96,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <h5>{{ order.table }}</h5>
+                    <h5>
+                        {% if order.table %}
+                            {{ order.table }}
+                        {% elif order.customer %}
+                            {{ order.customer.name }}
+                        {% endif %}
+                    </h5>
                     <h5>Unbezahlte Posten auswählen</h5>
                     <form id="splitForm" method="POST" onsubmit="event.preventDefault(); markItemsAsPaid();">
                         {% csrf_token %}
@@ -100,7 +119,7 @@
                                 </thead>
                                 <tbody>
                                     {% for item in unpaid_items %}
-                                        {% if item.quantity|subtract:item.paid_quantity > 0 %}
+                                        {% if item.remaining_quantity > 0 %}
                                             <tr>
                                                 <td>
                                                     <div class="form-check">
@@ -115,18 +134,18 @@
                                                     {% endif %}
                                                 </td>
                                                 <td>€ {{ item.price }}</td>
-                                                <td>{{ item.quantity|subtract:item.paid_quantity }}</td>
-                                                <td><input class="form-control form-control-sm" type="number" name="quantities" data-item-id="{{ item.id }}" value="1" min="1" max="{{ item.quantity|subtract:item.paid_quantity }}" onchange="calculateSplit()"></td>
+                                                <td>{{ item.remaining_quantity }}</td>
+                                                <td><input class="form-control form-control-sm" type="number" name="quantities" data-item-id="{{ item.id }}" value="1" min="1" max="{{ item.remaining_quantity }}" onchange="calculateSplit()"></td>
                                             </tr>
                                         {% endif %}
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
-                        <p id="split_total"><strong>Zwischensumme: 0 €</strong></p>
+                        <p id="split_total" style="font-weight: bold;">Zwischensumme: 0 €</p>
                         <div class="d-flex justify-content-between">
                             <div>
-                                <button id="markSelectedPaidButton" type="submit" class="btn btn-primary">Ausgewählte als bezahlt markieren</button>
+                                <button id="markSelectedPaidButton" type="submit" class="btn btn-primary me-2">Ausgewählte als bezahlt markieren</button>
                                 <button id="markOrderPaidButton" type="button" class="btn btn-success ms-2" style="display: none;" onclick="markOrderAsPaidIfAllItemsPaid()">Bestellung als bezahlt markieren</button>
                             </div>
                             <a id="backButton" href="{% url 'order_index' %}" class="btn btn-danger">Zurück</a>
@@ -146,9 +165,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Gesamtsumme: € {{ order.total_price }}</p>
+                    <p><strong>Gesamtsumme: € {{ order.total_price }}</strong></p>
                     <button type="button" class="btn btn-primary" onclick="payTotalConfirmed()">Bezahlen</button>
-                    <a href="{% url 'order_index' %}" class="btn btn-secondary">Zurück</a>
+                    <a href="{% url 'order_index' %}" class="btn btn-danger">Zurück</a>
                 </div>
             </div>
         </div>

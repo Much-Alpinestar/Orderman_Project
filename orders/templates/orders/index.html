@@ -33,7 +33,13 @@
                 <tbody>
                     {% for order in page_obj %}
                         <tr>
-                            <td>{{ order }}</td>
+                            <td>
+                                {% if order.table %}
+                                    Tisch: {{ order.table.number_of_table }}
+                                {% elif order.customer %}
+                                    {{ order.customer.name }}
+                                {% endif %}
+                            </td>
                             <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
                             <td>{% if order.paid %}
                                 <span class="text-success">

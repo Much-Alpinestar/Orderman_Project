@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block body %}
 
 {% if messages %}
@@ -35,8 +36,6 @@
                             <td>{{ user.last_name }}</td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.is_superuser }}</td>
-                            <td>
-                                <!-- Weitere Aktionen hinzufügen, wie Bearbeiten oder Löschen -->
                             </td>
                         </tr>
                     {% endfor %}

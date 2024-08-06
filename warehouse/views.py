@@ -4,16 +4,18 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.contrib import messages
 
-from .forms import FoodForm, BeverageForm
+from .forms import BeverageQuantityForm, FoodForm, BeverageForm, FoodQuantityForm
 from .models import Food, Beverage, Item
 
 # Create your views here.
 @login_required
 @permission_required('warehouse.view_food', 'warehouse.view_beverage')
 def index(request):
+    foods = Food.objects.filter(is_active=True)
+    beverages = Beverage.objects.filter(is_active=True)
     return render(request, 'warehouse/index.html', {
-        'foods':Food.objects.all(), 
-        'beverages':Beverage.objects.all()
+        'foods':foods, 
+        'beverages':beverages
     })
 
 @login_required
@@ -67,13 +69,13 @@ def edit_food(request, food_id):
     food_instance = get_object_or_404(Food, id=food_id)
     
     if request.method == 'POST':
-        form = FoodForm(request.POST, instance=food_instance)
+        form = FoodQuantityForm(request.POST, instance=food_instance)
         if form.is_valid():
             form.save()
             messages.success(request, 'Die Speise wurde erfolgreich geändert.')
             return redirect('index')
     else:
-        form = FoodForm(instance=food_instance)
+        form = FoodQuantityForm(instance=food_instance)
     
     return render(request, 'warehouse/edit_food.html', {'form': form})
 
@@ -83,13 +85,13 @@ def edit_beverage(request, beverage_id):
     beverage_instance = get_object_or_404(Beverage, id=beverage_id)
 
     if request.method == 'POST':
-        form = BeverageForm(request.POST, instance=beverage_instance)
+        form = BeverageQuantityForm(request.POST, instance=beverage_instance)
         if form.is_valid():
             form.save()
             messages.success(request, 'Das Getränk wurde erfolgreich geändert.')
             return redirect('index')
     else:
-        form = BeverageForm(instance=beverage_instance)
+        form = BeverageQuantityForm(instance=beverage_instance)
 
     return render(request, 'warehouse/edit_beverage.html', {'form':form})
 
@@ -107,4 +109,22 @@ def delete_beverage(request, beverage_id):
     beverage_instance = get_object_or_404(Beverage, id=beverage_id)
     beverage_instance.delete()
     messages.success(request, 'Das Getränk wurde erfolgreich gelöscht.')
+    return redirect('index')
+
+@login_required
+@permission_required('warehouse.change_food')
+def remove_food_from_stock(request, food_id):
+    food_instance = get_object_or_404(Food, pk=food_id)
+    food_instance.is_active = False
+    food_instance.save()
+    messages.success(request, 'Die Speise wurde aus dem Lager entfernt')
+    return redirect('index')
+
+@login_required
+@permission_required('warehouse.change_beverage')
+def remove_beverage_from_stock(request, beverage_id):
+    beverage_instance = get_object_or_404(Beverage, pk=beverage_id)
+    beverage_instance.is_active = False
+    beverage_instance.save()
+    messages.success(request, 'Das Getränk wurde aus dem Lager entfernt')
     return redirect('index')

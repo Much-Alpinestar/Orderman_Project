@@ -19,6 +19,7 @@ class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True, blank=True)
     items = models.ManyToManyField('OrderItem')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tip = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     paid = models.BooleanField(default=False)
     canceled = models.BooleanField(default=False)
@@ -45,8 +46,8 @@ class OrderItem(models.Model):
     
     def __str__(self):
         if self.food:
-            return f"{self.quantity}x {self.food.name} - {'Paid' if self.food.paid else 'Unpaid'}"
+            return f"{self.quantity}x {self.food.name} - {'Paid' if self.paid else 'Unpaid'}"
         elif self.beverage:
-            return f"{self.quantity}x {self.beverage.name} - {'Paid' if self.beverage.paid else 'Unpaid'}"
+            return f"{self.quantity}x {self.beverage.name} - {'Paid' if self.paid else 'Unpaid'}"
         else:
             return "Invalid Order Item"

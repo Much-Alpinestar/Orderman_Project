@@ -53,7 +53,13 @@
                                         <td>{{ item.quantity }}</td>
                                         <td>{{ item.paid_quantity }}</td>
                                         <td>€ {{ item.total_price|floatformat:2 }}</td>
-
+                                        <td>
+                                            <form action="{% url 'remove_item_from_order' order.id item.id %}" method="POST" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="number" name="remove_quantity" min="1" max="{{ item.quantity }}" value="1" class="form-control form-control-sm" style="width: 80px; display: inline-block;">
+                                                <button type="submit" class="btn btn-danger btn-sm">Entfernen</button>
+                                            </form>
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -73,6 +79,7 @@
                             data-bs-target="#addBeverageModal">Getränk hinzufügen</button>
                     </div>
                     <button type="submit" name="complete_order" class="btn btn-primary">Bestellung aktualisieren</button>
+                    <a href="{% url 'cancel_order' order.id %}" class="btn btn-warning">Bestellung stornieren</a>
                     <a href="{% url 'order_index' %}" class="btn btn-danger">Abbrechen</a>
                 </form>
             </div>

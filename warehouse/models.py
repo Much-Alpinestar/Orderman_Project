@@ -5,6 +5,7 @@ class Item(models.Model):
     price = models.DecimalField(max_digits=5, decimal_places=2)
     quantity = models.IntegerField()
     category = models.CharField(max_length=100, default='Food')
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         abstract = True

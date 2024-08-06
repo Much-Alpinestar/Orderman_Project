@@ -79,17 +79,17 @@
                                     <i class="fa-solid fa-pen-to-square fa-lg"></i>
                                 </a>
 
-                                <button type="button" class="btn btn-outline-danger me-1 mb-1" data-bs-toggle="modal" data-bs-target="#delete{{food.id}}">
+                                <button type="button" class="btn btn-outline-danger me-1 mb-1" data-bs-toggle="modal" data-bs-target="#remove{{food.id}}">
                                     <i class="fa-solid fa-trash fa-lg"></i>
                                 </button>
 
-                                <!-- Modal - Delete Food-->
-                                <div class="modal" id="delete{{food.id}}" tabindex="-1" aria-labelledby="deleteModalL" aria-hidden="true">
+                                <!-- Modal - Remove Food-->
+                                <div class="modal" id="remove{{food.id}}" tabindex="-1" aria-labelledby="removeModalL" aria-hidden="true">
                                     <div class="modal-dialog" role="document">
                                       <div class="modal-content">
                                         <div class="modal-header">
                                           <h5 class="modal-title">
-                                            Speise {{ food.name }} löschen
+                                            Speise {{ food.name }} aus dem Lager entfernen
                                           </h5>
                                           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true"></span>
@@ -99,11 +99,11 @@
                                           <p>Sind Sie sicher, dass sie {{food.name}} aus dem Warenlager entfernen wollen?</p>
                                         </div>
                                         <div class="modal-footer">
-                                          <form action="{% url 'delete_food' food.id %}" method="POST">
+                                          <form action="{% url 'remove_food_from_stock' food.id %}" method="POST">
                                             {% csrf_token %}
-                                            <input type="submit" class="btn btn-danger" value="Löschen">
+                                            <input type="submit" class="btn btn-primary" value="Entfernen">
                                           </form>
-                                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Abbrechen</button>
                                         </div>
                                       </div>
                                     </div>
@@ -192,17 +192,17 @@
                                 <i class="fa-solid fa-pen-to-square fa-lg"></i>
                             </a>
 
-                            <button type="button" class="btn btn-outline-danger me-1 mb-1" data-bs-toggle="modal" data-bs-target="#delete{{beverage.id}}">
+                            <button type="button" class="btn btn-outline-danger me-1 mb-1" data-bs-toggle="modal" data-bs-target="#remove{{beverage.id}}">
                                 <i class="fa-solid fa-trash fa-lg"></i>
                             </button>
 
-                            <!-- Modal - Delete Beverage-->
-                            <div class="modal" id="delete{{beverage.id}}" tabindex="-1" aria-labelledby="deleteModalL" aria-hidden="true">
+                            <!-- Modal - Remove Beverage-->
+                            <div class="modal" id="remove{{beverage.id}}" tabindex="-1" aria-labelledby="removeModalL" aria-hidden="true">
                                 <div class="modal-dialog" role="document">
                                   <div class="modal-content">
                                     <div class="modal-header">
                                       <h5 class="modal-title">
-                                        Getränk {{ beverage.name }} löschen
+                                        Getränk {{ beverage.name }} aus dem Lager entfernen
                                       </h5>
                                       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true"></span>
@@ -212,11 +212,11 @@
                                       <p>Sind Sie sicher, dass Sie {{beverage.name}} aus dem Warenlager entfernen wollen?</p>
                                     </div>
                                     <div class="modal-footer">
-                                      <form action="{% url 'delete_beverage' beverage.id %}" method="POST">
+                                      <form action="{% url 'remove_beverage_from_stock' beverage.id %}" method="POST">
                                         {% csrf_token %}
-                                        <input type="submit" class="btn btn-danger" value="Löschen">
+                                        <input type="submit" class="btn btn-primary" value="Entfernen">
                                       </form>
-                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                      <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Abbrechen</button>
                                     </div>
                                   </div>
                                 </div>

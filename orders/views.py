@@ -2,7 +2,7 @@ import json
 import logging
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import models
-from django.db.models import Case, When, IntegerField
+from django.db.models import Case, When, IntegerField, Value
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -12,7 +12,7 @@ from .models import Order, Food, Beverage, OrderItem, Customer
 from .forms import OrderForm
 
 # View für die Bestellübersicht
-@login_required
+""" @login_required
 @permission_required('orders.view_order')
 def order_index(request):
     order_list = Order.objects.annotate(
@@ -26,21 +26,23 @@ def order_index(request):
     paginator = Paginator(order_list, 10)  # 10 Bestellungen pro Seite
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    return render(request, 'orders/index.html', {'page_obj': page_obj}) """
+    
+def order_index(request):
+    order_list = Order.objects.annotate(
+        status_order=Case(
+            When(paid=False, canceled=False, then=Value(1)),
+            When(canceled=True, then=Value(2)),
+            When(paid=True, then=Value(3)),
+            default=Value(4),
+            output_field=IntegerField(),
+        )
+    ).order_by('status_order', '-created_at')
+
+    paginator = Paginator(order_list, 10)  # 10 Bestellungen pro Seite
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     return render(request, 'orders/index.html', {'page_obj': page_obj})
-
-
-# View für die Erstellung einer Bestellung
-""" @login_required
-@permission_required('orders.add_order')
-def create_order(request):
-    if request.method == 'POST':
-        form = OrderForm(request.POST)
-        if form.is_valid():
-            order = form.save()
-            return redirect('edit_order', order_id=order.id)
-    else:
-        form = OrderForm()
-    return render(request, 'orders/create_order.html', {'form': form}) """
 
 @login_required
 @permission_required('orders.add_order')
@@ -275,11 +277,10 @@ def check_all_items_paid(request, order_id):
 @login_required
 @permission_required('orders.can_cancel_order')
 def cancel_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    order = get_object_or_404(Order, pk=order_id)
     order.canceled = True
     order.save()
 
-    # Restock items
     for item in order.items.all():
         if item.food:
             item.food.quantity += item.quantity
@@ -290,3 +291,43 @@ def cancel_order(request, order_id):
 
     messages.success(request, 'Die Bestellung wurde erfolgreich storniert.')
     return redirect('order_index')
+
+@login_required
+@permission_required('orders.change_order')
+def remove_item_from_order(request, order_id, item_id):
+    order = get_object_or_404(Order, pk=order_id)
+    order_item = get_object_or_404(OrderItem, pk=item_id)
+    
+    remove_quantity = int(request.POST.get('remove_quantity', 1))
+
+    if order.items.filter(id=item_id).exists():
+        if remove_quantity >= order_item.quantity:
+            if order_item.food:
+                order_item.food.quantity += order_item.quantity
+                order_item.food.save()
+            if order_item.beverage:
+                order_item.beverage.quantity += order_item.quantity
+                order_item.beverage.save()
+                
+            order.total_price -= order_item.price * order_item.quantity
+            order.items.remove(order_item)
+            order_item.delete()
+        else:
+            if order_item.food:
+                order_item.food.quantity += remove_quantity
+                order_item.food.save()
+            if order_item.beverage:
+                order_item.beverage.quantity += remove_quantity
+                order_item.beverage.save()
+
+            order_item.quantity -= remove_quantity
+            order.total_price -= order_item.price * remove_quantity
+            order_item.save()
+        
+        order.save()
+        
+        messages.success(request, 'Artikelmenge wurde erfolgreich verringert.')
+    else:
+        messages.error(request, 'Artikel konnte nicht entfernt werden.')
+
+    return redirect('edit_order', order_id=order_id)

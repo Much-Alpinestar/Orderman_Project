@@ -41,18 +41,24 @@
                                 {% endif %}
                             </td>
                             <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-                            <td>{% if order.paid %}
-                                <span class="text-success">
-                                    <i class="fa-solid fa-circle"></i> Bezahlt
-                                </span>
-                            {% else %}
-                                <span class="text-danger">
-                                    <i class="fa-solid fa-circle"></i> Offen
-                                </span>
-                            {% endif %}</td>
+                            <td>
+                                {% if order.canceled %}
+                                    <span class="text-warning">
+                                        <i class="fa-solid fa-circle"></i> Storniert
+                                    </span>
+                                {% elif order.paid %}
+                                    <span class="text-success">
+                                        <i class="fa-solid fa-circle"></i> Bezahlt
+                                    </span>
+                                {% else %}
+                                    <span class="text-danger">
+                                        <i class="fa-solid fa-circle"></i> Offen
+                                    </span>
+                                {% endif %}
+                            </td>
                             <td>{{ order.total_price|floatformat:2 }} €</td>
                             <td>
-                                {% if order.paid %}
+                                {% if order.paid or order.canceled %}
                                     <a class="btn btn-outline-primary btn-sm me-1 mb-1" href="{% url 'view_order' order.id %}">
                                         <i class="fa-solid fa-eye fa-lg"></i>
                                     </a>
@@ -62,13 +68,47 @@
                                     </a>
                                 {% endif %}
 
-                                {% if not order.paid %}
+                                {% if not order.paid and not order.canceled %}
                                     <a class="btn btn-outline-success btn-sm me-1 mb-1" href="{% url 'order_summary' order.id %}">
                                         <i class="fa-solid fa-money-bill-1 fa-lg"></i>
                                     </a>
+                                    <button type="button" class="btn btn-outline-danger btn-sm me-1 mb-1" data-bs-toggle="modal" data-bs-target="#cancelOrderModal{{ order.id }}">
+                                        <i class="fa-solid fa-ban fa-lg"></i>
+                                    </button>
                                 {% endif %}
                             </td>
                         </tr>
+
+                        <!-- Modal - Cancel Order -->
+                        <div class="modal fade" id="cancelOrderModal{{ order.id }}" tabindex="-1" aria-labelledby="cancelOrderModalLabel{{ order.id }}" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Bestellung stornieren</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Sind Sie sicher, dass Sie die Bestellung von 
+                                            {% if order.table %}
+                                                Tisch: {{ order.table.number_of_table }}
+                                            {% elif order.customer %}
+                                                {{ order.customer.name }}
+                                            {% endif %} 
+                                            stornieren möchten?
+                                        </p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <form action="{% url 'cancel_order' order.id %}" method="POST">
+                                            {% csrf_token %}
+                                            <input type="submit" class="btn btn-primary" value="Stornieren">
+                                        </form>
+                                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Abbrechen</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- End Modal - Cancel Order -->
+
                     {% endfor %}
                 </tbody>
             </table>

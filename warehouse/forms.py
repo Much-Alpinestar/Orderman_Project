@@ -20,7 +20,6 @@ class FoodForm(forms.ModelForm):
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            # Set the initial value for the 'category' field to 'Food'
             self.initial['category'] = 'Food'
 
 class BeverageForm(forms.ModelForm):
@@ -41,5 +40,24 @@ class BeverageForm(forms.ModelForm):
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            # Set the initial value for the 'category' field to 'Food'
             self.initial['category'] = 'Beverages' 
+            
+class FoodQuantityForm(forms.ModelForm):
+    name = forms.CharField(label='Name', widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
+
+    class Meta:
+        model = Food
+        fields = ['name', 'quantity']
+        widgets = {
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+class BeverageQuantityForm(forms.ModelForm):
+    name = forms.CharField(label='Name', widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
+    
+    class Meta:
+        model = Beverage
+        fields = ['name', 'quantity']
+        widgets = {
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
